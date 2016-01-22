@@ -13,6 +13,21 @@ import CoreData
 ///  Describes a child managed object context.
 public typealias ChildManagedObjectContext = NSManagedObjectContext
 
+public enum StoreType {
+    case Persistent
+    case InMemory
+    
+    var coreDataType: String {
+        switch self {
+        case .Persistent:
+            return NSSQLiteStoreType
+            
+        case . InMemory:
+            return NSInMemoryStoreType
+        }
+    }
+}
+
 
 ///  An instance of `CoreDataStack` encapsulates the entire Core Data stack for a SQLite store type.
 ///  It manages the managed object model, the persistent store coordinator, and the main managed object context.
@@ -42,17 +57,18 @@ public final class CoreDataStack: CustomStringConvertible {
     ///
     ///  :returns: A new `CoreDataStack` instance.
     public init(model: CoreDataModel,
-        storeType: String = NSSQLiteStoreType,
+        storeType: StoreType = StoreType.Persistent,
         options: [NSObject : AnyObject]? = [NSMigratePersistentStoresAutomaticallyOption : true, NSInferMappingModelAutomaticallyOption : true],
         concurrencyType: NSManagedObjectContextConcurrencyType = .MainQueueConcurrencyType) {
             
             self.model = model
             self.persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model.managedObjectModel)
             
-            let modelStoreURL: NSURL? = (storeType == NSInMemoryStoreType) ? nil : model.storeURL
+            let modelStoreURL: NSURL? = (storeType == .InMemory) ? nil : model.storeURL
             
             do {
-                try self.persistentStoreCoordinator.addPersistentStoreWithType(storeType, configuration: nil, URL: modelStoreURL, options: options)
+                try self.persistentStoreCoordinator.addPersistentStoreWithType(storeType.coreDataType,
+                    configuration: nil, URL: modelStoreURL, options: options)
             } catch _ {
                 assert(true, "*** Error adding persistent store")
             }
