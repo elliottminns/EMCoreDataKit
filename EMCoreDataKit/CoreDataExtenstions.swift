@@ -37,7 +37,7 @@ public func saveContextAndWait(context: NSManagedObjectContext) -> ContextSaveRe
             success = true
         } catch _ {
             success = false
-            print("*** ERROR: [\(__LINE__)] \(__FUNCTION__) Could not save managed object context:")
+            print("*** ERROR: [\(#line)\(#function) save managed object context:")
         }
     }
     
@@ -69,7 +69,7 @@ public func saveContext(context: NSManagedObjectContext, completion: (ContextSav
         }
         
         if !success {
-            print("*** ERROR: [\(__LINE__)] \(__FUNCTION__) Could not save managed object context:")
+            print("*** ERROR: [\(#line)\(#function) Could not save managed object context:")
         }
         
         completion((success, NSError(domain: "", code: 2, userInfo: nil)))
@@ -142,7 +142,7 @@ public func fetch <T: NSManagedObject>(request request: FetchRequest<T>, inConte
     if let results = results {
         return FetchResult(success: true, objects: results as! [T], error: nil)
     } else {
-        print("*** ERROR: [\(__LINE__)] \(__FUNCTION__) Error while executing fetch request: ")
+        print("*** ERROR: [\(#line)] \(#function) Error while executing fetch request: ")
     }
     
     return FetchResult(success: false, objects: [], error: NSError(domain: "", code: 1, userInfo: nil))

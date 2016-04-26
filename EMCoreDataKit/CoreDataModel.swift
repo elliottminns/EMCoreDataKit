@@ -14,7 +14,7 @@ import CoreData
 ///  It provides the model and store URLs as well as functions for interacting with the store.
 public struct CoreDataModel: CustomStringConvertible {
     
-    // MARK: Properties
+    // MARK: - Properties
     
     ///  The name of the Core Data model resource.
     public let name: String
@@ -65,32 +65,36 @@ public struct CoreDataModel: CustomStringConvertible {
                 let sourceMetaData = try NSPersistentStoreCoordinator.metadataForPersistentStoreOfType(nil, URL: storeURL)
                 return !managedObjectModel.isConfiguration(nil, compatibleWithStoreMetadata: sourceMetaData)
             } catch _ {
-                print("*** \(String(CoreDataModel.self)) ERROR: [\(__LINE__)] \(__FUNCTION__) Failure checking persistent store coordinator meta data:")
+                print("*** \(String(CoreDataModel.self)) ERROR: [\(#line)] \(#function) Failure checking persistent store coordinator meta data:")
                 return false
             }
         }
     }
     
-    // MARK: Initialization
+    // MARK: - Initialization
+
+    /**
+    Constructs new `CoreDataModel` instance with the specified name and bundle.
     
-    ///  Constructs new `CoreDataModel` instance with the specified name and bundle.
-    ///
-    ///  :param: name              The name of the Core Data model.
-    ///  :param: bundle            The bundle in which the model is located. The default parameter value is `NSBundle.mainBundle()`.
-    ///  :param: storeDirectoryURL The directory in which the model is located. The default parameter value is the user's documents directory.
-    ///
-    ///  :returns: A new `CoreDataModel` instance.
+    - parameter name:              The name of the Core Data model.
+    - parameter bundle:            The bundle in which the model is located. The default parameter value is `NSBundle.mainBundle()`.
+    - parameter storeDirectoryURL: The directory in which the model is located. The default parameter value is the user's documents directory.
+    
+    - returns: A new `CoreDataModel` instance.
+    */
     public init(name: String, bundle: NSBundle = NSBundle.mainBundle(), storeDirectoryURL: NSURL = documentsDirectoryURL()) {
         self.name = name
         self.bundle = bundle
         self.storeDirectoryURL = storeDirectoryURL
     }
     
-    // MARK: Methods
+    // MARK: - Methods
+
+    /**
+    Removes the existing model store specfied by the receiver.
     
-    ///  Removes the existing model store specfied by the receiver.
-    ///
-    ///  :returns: A tuple value containing a boolean to indicate success and an error object if an error occurred.
+    - returns: A tuple value containing a boolean to indicate success and an error object if an error occurred.
+    */
     public func removeExistingModelStore() -> (success: Bool, error: NSError?) {
         let fileManager = NSFileManager.defaultManager()
         
@@ -108,7 +112,7 @@ public struct CoreDataModel: CustomStringConvertible {
                     error = err
                 }
                 if !success {
-                    print("*** \(String(CoreDataModel.self)) ERROR: [\(__LINE__)] \(__FUNCTION__) Could not remove model store at url:")
+                    print("*** \(String(CoreDataModel.self)) ERROR: [\(#line)] \(#function) Could not remove model store at url:")
                 }
                 return (success, error)
             }
@@ -117,7 +121,7 @@ public struct CoreDataModel: CustomStringConvertible {
         return (false, nil)
     }
     
-    // MARK: Printable
+    // MARK:  - Printable
     
     /// :nodoc:
     public var description: String {
