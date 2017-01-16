@@ -14,15 +14,15 @@ import CoreData
 public typealias ChildManagedObjectContext = NSManagedObjectContext
 
 public enum StoreType {
-    case Persistent
-    case InMemory
+    case persistent
+    case inMemory
     
     var coreDataType: String {
         switch self {
-        case .Persistent:
+        case .persistent:
             return NSSQLiteStoreType
             
-        case . InMemory:
+        case . inMemory:
             return NSInMemoryStoreType
         }
     }
@@ -57,18 +57,18 @@ public final class CoreDataStack: CustomStringConvertible {
     ///
     ///  :returns: A new `CoreDataStack` instance.
     public init(model: CoreDataModel,
-        storeType: StoreType = StoreType.Persistent,
-        options: [NSObject : AnyObject]? = [NSMigratePersistentStoresAutomaticallyOption : true, NSInferMappingModelAutomaticallyOption : true],
-        concurrencyType: NSManagedObjectContextConcurrencyType = .MainQueueConcurrencyType) {
+        storeType: StoreType = StoreType.persistent,
+        options: [AnyHashable: Any]? = [NSMigratePersistentStoresAutomaticallyOption : true, NSInferMappingModelAutomaticallyOption : true],
+        concurrencyType: NSManagedObjectContextConcurrencyType = .mainQueueConcurrencyType) {
             
             self.model = model
             self.persistentStoreCoordinator = NSPersistentStoreCoordinator(managedObjectModel: model.managedObjectModel)
             
-            let modelStoreURL: NSURL? = (storeType == .InMemory) ? nil : model.storeURL
+            let modelStoreURL: URL? = (storeType == .inMemory) ? nil : model.storeURL
             
             do {
-                try self.persistentStoreCoordinator.addPersistentStoreWithType(storeType.coreDataType,
-                    configuration: nil, URL: modelStoreURL, options: options)
+                try self.persistentStoreCoordinator.addPersistentStore(ofType: storeType.coreDataType,
+                    configurationName: nil, at: modelStoreURL, options: options)
             } catch _ {
                 assert(true, "*** Error adding persistent store")
             }
@@ -87,12 +87,12 @@ public final class CoreDataStack: CustomStringConvertible {
     ///                          The default parameter value is `.MergeByPropertyObjectTrumpMergePolicyType`.
     ///
     ///  :returns: A new child managed object context initialized with the given concurrency type and merge policy type.
-    public func childManagedObjectContext(concurrencyType concurrencyType: NSManagedObjectContextConcurrencyType = .MainQueueConcurrencyType,
-        mergePolicyType: NSMergePolicyType = .MergeByPropertyObjectTrumpMergePolicyType) -> ChildManagedObjectContext {
+    public func childManagedObjectContext(concurrencyType: NSManagedObjectContextConcurrencyType = .mainQueueConcurrencyType,
+        mergePolicyType: NSMergePolicyType = .mergeByPropertyObjectTrumpMergePolicyType) -> ChildManagedObjectContext {
             
             let childContext = NSManagedObjectContext(concurrencyType: concurrencyType)
-            childContext.parentContext = managedObjectContext
-            childContext.mergePolicy = NSMergePolicy(mergeType: mergePolicyType)
+            childContext.parent = managedObjectContext
+            childContext.mergePolicy = NSMergePolicy(merge: mergePolicyType)
             return childContext
     }
     
@@ -101,7 +101,7 @@ public final class CoreDataStack: CustomStringConvertible {
     /// :nodoc:
     public var description: String {
         get {
-            return "<\(String(CoreDataStack.self)): model=\(model)>"
+            return "<\(String(describing: CoreDataStack.self)): model=\(model)>"
         }
     }
     

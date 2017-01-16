@@ -23,7 +23,7 @@ public typealias ContextSaveResult = (success: Bool, error: NSError?)
 ///  :param: context The managed object context to save.
 ///
 ///  :returns: A `ContextSaveResult` instance indicating the result from saving the context.
-public func saveContextAndWait(context: NSManagedObjectContext) -> ContextSaveResult {
+public func saveContextAndWait(_ context: NSManagedObjectContext) -> ContextSaveResult {
     
     if !context.hasChanges {
         return (true, nil)
@@ -31,7 +31,7 @@ public func saveContextAndWait(context: NSManagedObjectContext) -> ContextSaveRe
     
     var success: Bool = false
     
-    context.performBlockAndWait { () -> Void in
+    context.performAndWait { () -> Void in
         do {
             try context.save()
             success = true
@@ -51,13 +51,13 @@ public func saveContextAndWait(context: NSManagedObjectContext) -> ContextSaveRe
 ///
 ///  :param: context    The managed object context to save.
 ///  :param: completion The closure to be executed when the save operation completes.
-public func saveContext(context: NSManagedObjectContext, completion: (ContextSaveResult) -> Void) {
+public func saveContext(_ context: NSManagedObjectContext, completion: @escaping (ContextSaveResult) -> Void) {
     if !context.hasChanges {
         completion((true, nil))
         return
     }
     
-    context.performBlock { () -> Void in
+    context.perform { () -> Void in
 
         let success: Bool
         
@@ -83,15 +83,15 @@ public func saveContext(context: NSManagedObjectContext, completion: (ContextSav
 ///  :param: context The managed object context to use.
 ///
 ///  :returns: The entity with the specified name from the managed object model associated with context’s persistent store coordinator.
-public func entity(name name: String, context: NSManagedObjectContext) -> NSEntityDescription {
-    return NSEntityDescription.entityForName(name, inManagedObjectContext: context)!
+public func entity(name: String, context: NSManagedObjectContext) -> NSEntityDescription {
+    return NSEntityDescription.entity(forEntityName: name, in: context)!
 }
 
 
 ///  An instance of `FetchRequest <T: NSManagedObject>` describes search criteria used to retrieve data from a persistent store.
 ///  This is a subclass of `NSFetchRequest` that adds a type parameter specifying the type of managed objects for the fetch request.
 ///  The type parameter acts as a phantom type.
-public class FetchRequest <T: NSManagedObject>: NSFetchRequest {
+open class FetchRequest <T: NSManagedObject>: NSFetchRequest<NSFetchRequestResult> {
     
     ///  Constructs a new `FetchRequest` instance.
     ///
@@ -101,6 +101,10 @@ public class FetchRequest <T: NSManagedObject>: NSFetchRequest {
     public init(entity: NSEntityDescription) {
         super.init()
         self.entity = entity
+    }
+
+    required public init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
     }
 }
 
@@ -127,13 +131,13 @@ public struct FetchResult <T: NSManagedObject> {
 ///  :param: context The managed object context in which to search.
 ///
 ///  :returns: A instance of `FetchResult` describing the results of executing the request.
-public func fetch <T: NSManagedObject>(request request: FetchRequest<T>, inContext context: NSManagedObjectContext) -> FetchResult<T> {
+public func fetch <T: NSManagedObject>(request: FetchRequest<T>, inContext context: NSManagedObjectContext) -> FetchResult<T> {
     
     var results: [AnyObject]?
     
-    context.performBlockAndWait { () -> Void in
+    context.performAndWait { () -> Void in
         do {
-            try results = context.executeFetchRequest(request)
+            try results = context.fetch(request)
         } catch _ {
             results = nil
         }
@@ -155,15 +159,15 @@ public func fetch <T: NSManagedObject>(request request: FetchRequest<T>, inConte
 ///
 ///  :param: objects The managed objects to be deleted.
 ///  :param: context The context to which the objects belong.
-public func deleteObjects <T: NSManagedObject>(objects: [T], inContext context: NSManagedObjectContext) {
+public func deleteObjects <T: NSManagedObject>(_ objects: [T], inContext context: NSManagedObjectContext) {
     
     if objects.count == 0 {
         return
     }
     
-    context.performBlockAndWait { () -> Void in
+    context.performAndWait { () -> Void in
         for each in objects {
-            context.deleteObject(each)
+            context.delete(each)
         }
     }
 }

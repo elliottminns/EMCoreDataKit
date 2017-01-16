@@ -20,22 +20,22 @@ public struct CoreDataModel: CustomStringConvertible {
     public let name: String
     
     ///  The bundle in which the model is located.
-    public let bundle: NSBundle
+    public let bundle: Bundle
     
     ///  The file URL specifying the directory in which the store is located.
-    public let storeDirectoryURL: NSURL
+    public let storeDirectoryURL: URL
     
     ///  The file URL specifying the full path to the store.
-    public var storeURL: NSURL {
+    public var storeURL: URL {
         get {
-            return storeDirectoryURL.URLByAppendingPathComponent(databaseFileName)
+            return storeDirectoryURL.appendingPathComponent(databaseFileName)
         }
     }
     
     ///  The file URL specifying the model file in the bundle specified by `bundle`.
-    public var modelURL: NSURL {
+    public var modelURL: URL {
         get {
-            let url = bundle.URLForResource(name, withExtension: "momd")
+            let url = bundle.url(forResource: name, withExtension: "momd")
             assert(url != nil, "*** Error loading resource for model named \(name) at url: \(url)")
             return url!
         }
@@ -51,7 +51,7 @@ public struct CoreDataModel: CustomStringConvertible {
     ///  The managed object model for the model specified by `name`.
     public var managedObjectModel: NSManagedObjectModel {
         get {
-            let model = NSManagedObjectModel(contentsOfURL: modelURL)
+            let model = NSManagedObjectModel(contentsOf: modelURL)
             assert(model != nil, "*** Error loading managed object model at url: \(modelURL)")
             return model!
         }
@@ -62,10 +62,10 @@ public struct CoreDataModel: CustomStringConvertible {
     public var modelStoreNeedsMigration: Bool {
         get {
             do {
-                let sourceMetaData = try NSPersistentStoreCoordinator.metadataForPersistentStoreOfType(nil, URL: storeURL)
-                return !managedObjectModel.isConfiguration(nil, compatibleWithStoreMetadata: sourceMetaData)
+                let sourceMetaData = try NSPersistentStoreCoordinator.metadataForPersistentStore(ofType: nil, at: storeURL)
+                return !managedObjectModel.isConfiguration(withName: nil, compatibleWithStoreMetadata: sourceMetaData)
             } catch _ {
-                print("*** \(String(CoreDataModel.self)) ERROR: [\(#line)] \(#function) Failure checking persistent store coordinator meta data:")
+                print("*** \(String(describing: CoreDataModel.self)) ERROR: [\(#line)] \(#function) Failure checking persistent store coordinator meta data:")
                 return false
             }
         }
@@ -82,7 +82,7 @@ public struct CoreDataModel: CustomStringConvertible {
     
     - returns: A new `CoreDataModel` instance.
     */
-    public init(name: String, bundle: NSBundle = NSBundle.mainBundle(), storeDirectoryURL: NSURL = documentsDirectoryURL()) {
+    public init(name: String, bundle: Bundle = Bundle.main, storeDirectoryURL: URL = documentsDirectoryURL()) {
         self.name = name
         self.bundle = bundle
         self.storeDirectoryURL = storeDirectoryURL
@@ -96,26 +96,26 @@ public struct CoreDataModel: CustomStringConvertible {
     - returns: A tuple value containing a boolean to indicate success and an error object if an error occurred.
     */
     public func removeExistingModelStore() -> (success: Bool, error: NSError?) {
-        let fileManager = NSFileManager.defaultManager()
+        let fileManager = FileManager.default
         
-        if let storePath = storeURL.path {
-            if fileManager.fileExistsAtPath(storePath) {
-                let success: Bool
-                let error: NSError?
-                
-                do {
-                    try fileManager.removeItemAtURL(storeURL)
-                    success = true
-                    error = nil
-                } catch let err as NSError {
-                    success = false
-                    error = err
-                }
-                if !success {
-                    print("*** \(String(CoreDataModel.self)) ERROR: [\(#line)] \(#function) Could not remove model store at url:")
-                }
-                return (success, error)
+        let storePath = storeURL.path
+        
+        if fileManager.fileExists(atPath: storePath) {
+            let success: Bool
+            let error: NSError?
+            
+            do {
+                try fileManager.removeItem(at: storeURL)
+                success = true
+                error = nil
+            } catch let err as NSError {
+                success = false
+                error = err
             }
+            if !success {
+                print("*** \(String(describing: CoreDataModel.self)) ERROR: [\(#line)] \(#function) Could not remove model store at url:")
+            }
+            return (success, error)
         }
         
         return (false, nil)
@@ -126,7 +126,7 @@ public struct CoreDataModel: CustomStringConvertible {
     /// :nodoc:
     public var description: String {
         get {
-            return "<\(String(CoreDataModel.self)): name=\(name), needsMigration=\(modelStoreNeedsMigration), databaseFileName=\(databaseFileName), modelURL=\(modelURL), storeURL=\(storeURL)>"
+            return "<\(String(describing: CoreDataModel.self)): name=\(name), needsMigration=\(modelStoreNeedsMigration), databaseFileName=\(databaseFileName), modelURL=\(modelURL), storeURL=\(storeURL)>"
         }
     }
     
@@ -134,10 +134,10 @@ public struct CoreDataModel: CustomStringConvertible {
 
 // MARK: Private
 
-private func documentsDirectoryURL() -> NSURL {
-    let url: NSURL?
+private func documentsDirectoryURL() -> URL {
+    let url: URL?
     do {
-        url = try NSFileManager.defaultManager().URLForDirectory(.DocumentDirectory, inDomain: .UserDomainMask, appropriateForURL: nil, create: true)
+        url = try FileManager.default.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
     } catch let error as NSError {
         assert(true, "*** Error finding documents directory: \(error)")
         url = nil
